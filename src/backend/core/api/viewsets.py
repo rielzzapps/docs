@@ -1399,6 +1399,11 @@ class DocumentAccessViewSet(
         path_to_ancestors_roles = defaultdict(list)
         path_to_role = defaultdict(lambda: None)
         for access in accesses:
+            key = access.target_key
+            key_to_max_ancestors_role[key] = choices.RoleChoices.max(
+                key_to_max_ancestors_role.get(key), access.role
+            )
+
             if access.user_id == user.id or access.team in user.teams:
                 parent_path = access.document_path[: -models.Document.steplen]
                 if parent_path:
@@ -1420,6 +1425,7 @@ class DocumentAccessViewSet(
         serializer_class = self.get_serializer_class()
         serialized_data = []
         for access in accesses:
+            access.max_ancestors_role = key_to_max_ancestors_role[access.target_key]
             access.user_roles_tuple = (
                 choices.RoleChoices.max(*path_to_ancestors_roles[access.document_path]),
                 path_to_role.get(access.document_path),
